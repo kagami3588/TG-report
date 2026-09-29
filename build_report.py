@@ -292,6 +292,53 @@ merge(end, 1, 19, "※ 9月未稼働（訪問0）: " + "・".join(inactive), h="
 ws.cell(end, 1).font = Font(italic=True, size=9)
 end2 = person_block(end + 2, "  ■ 先月の個人データ", True, False)
 
+
+# ---- 今月を目立たせ、先月は控えめ(グレー)にする ----
+NOW_FILL = PatternFill("solid", fgColor="FFF2CC")
+NOW_FILL2 = PatternFill("solid", fgColor="FFF9E0")
+PAST_BAR = PatternFill("solid", fgColor="7F7F7F")
+PAST_HDR = PatternFill("solid", fgColor="A6A6A6")
+PAST_SUB = PatternFill("solid", fgColor="D9D9D9")
+PAST_BODY = PatternFill("solid", fgColor="F2F2F2")
+GRAY = "7F7F7F"
+
+def paint(r1, r2, c1, c2, fill=None, color=None, bold=None, size=None):
+    for r in range(r1, r2 + 1):
+        for c in range(c1, c2 + 1):
+            cell = ws.cell(r, c)
+            if fill is not None:
+                cell.fill = fill
+            f = cell.font
+            cell.font = Font(bold=f.bold if bold is None else bold,
+                             color=color or (f.color.rgb if f.color and isinstance(f.color.rgb, str) else "000000"),
+                             size=size or f.size or 11, italic=f.italic)
+
+# 全体数字: 今月=黄色+太字 / 先月=グレー
+paint(8, 8, 11, 19, PAST_BAR, "FFFFFF", True)
+paint(9, 9, 11, 19, PAST_HDR, "FFFFFF", True)
+paint(10, 16, 1, 9, NOW_FILL, "000000", True)
+paint(10, 16, 11, 19, PAST_BODY, GRAY, False)
+# 移行率(チーム平均)
+paint(20, 20, 4, 5, PatternFill("solid", fgColor="C55A11"), "FFFFFF", True)
+paint(20, 20, 6, 7, PAST_HDR, "FFFFFF", True)
+paint(21, 25, 4, 5, NOW_FILL, "000000", True, 12)
+paint(21, 25, 6, 7, PAST_BODY, GRAY, False)
+# 今月のアポイント結果を強調
+paint(5, 5, 16, 18, NOW_FILL, "C00000", True, 14)
+# 個人データ(今月): 黄色系の縞+太字
+n_act = len(active)
+paint(30, 29 + n_act, 2, 13, None, None, True)
+for i in range(n_act):
+    paint(30 + i, 30 + i, 1, 19, NOW_FILL if i % 2 == 0 else NOW_FILL2)
+    paint(30 + i, 30 + i, 1, 1, None, "000000", True)
+paint(29, 29, 1, 19, PatternFill("solid", fgColor="FFE699"), "000000", True)
+# 個人データ(先月): グレー
+t2 = end + 2
+paint(t2, t2, 1, 19, PAST_BAR, "FFFFFF", True)
+paint(t2 + 1, t2 + 1, 1, 13, PAST_HDR, "FFFFFF", True)
+paint(t2 + 2, t2 + 2, 1, 13, PAST_SUB, GRAY, True)
+paint(t2 + 3, t2 + 2 + n_act, 1, 13, PAST_BODY, GRAY, False)
+
 ws.page_setup.orientation = "landscape"
 ws.page_setup.fitToWidth = 1
 ws.page_setup.fitToHeight = 0
