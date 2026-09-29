@@ -36,7 +36,7 @@ box = Border(left=thin, right=thin, top=thin, bottom=thin)
 CNT = '#,##0"件"'
 PCT = '0.0%'
 DCNT = '[Blue]+#,##0"件";[Red]-#,##0"件";"±0件"'
-DPT = '[Blue]+0.0"pt";[Red]-0.0"pt";"±0pt"'
+DPT = '[Blue]+0.0"%";[Red]-0.0"%";"±0%"'
 
 wb = Workbook()
 
@@ -210,7 +210,7 @@ merge(rr, 8, 9, f"=(D{rr}-F{rr})*100"); merge(rr, 10, 19, "訪問1件あたり�
 style(rr, 1, 19); style(rr, 10, 19, h="left")
 for c in (4, 6):
     ws.cell(rr, c).number_format = '0.00%'
-ws.cell(rr, 8).number_format = '[Blue]+0.00"pt";[Red]-0.00"pt";"±0pt"'
+ws.cell(rr, 8).number_format = '[Blue]+0.00"%";[Red]-0.00"%";"±0%"'
 ws.cell(11, 5).number_format = PCT
 
 # ---- 個人データ
