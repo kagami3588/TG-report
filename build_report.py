@@ -26,14 +26,17 @@ DATA = [
 
 NAVY = "1F3864"
 hdr_fill = PatternFill("solid", fgColor=NAVY)
-sec_fill = PatternFill("solid", fgColor="D9E2F3")
-sub_fill = PatternFill("solid", fgColor="F2F2F2")
+sec_fill = PatternFill("solid", fgColor="2F4DA8")
+sub_fill = PatternFill("solid", fgColor="D9E6F5")
+band_fill = PatternFill("solid", fgColor="EEF3FA")
+teal_fill = PatternFill("solid", fgColor="1F5C8B")
+pink_fill = PatternFill("solid", fgColor="FFD0D5")
 thin = Side(style="thin", color="BFBFBF")
 box = Border(left=thin, right=thin, top=thin, bottom=thin)
 CNT = '#,##0"件"'
 PCT = '0.0%'
-DCNT = '+#,##0"件";-#,##0"件";"±0件"'
-DPT = '+0.0"pt";-0.0"pt";"±0pt"'
+DCNT = '[Blue]+#,##0"件";[Red]-#,##0"件";"±0件"'
+DPT = '[Blue]+0.0"pt";[Red]-0.0"pt";"±0pt"'
 
 wb = Workbook()
 
@@ -94,7 +97,8 @@ def merge(r, c1, c2, v=None, **kw):
     ws.merge_cells(start_row=r, start_column=c1, end_row=r, end_column=c2)
     cell = ws.cell(r, c1, v)
     if kw.get("bold"):
-        cell.font = Font(bold=True, size=kw.get("size", 11), color=kw.get("color", "000000"))
+        white = kw.get("fill") is sec_fill
+        cell.font = Font(bold=True, size=kw.get("size", 11), color=kw.get("color", "FFFFFF" if white else "000000"))
     if kw.get("fill"):
         for c in range(c1, c2 + 1):
             ws.cell(r, c).fill = kw["fill"]
@@ -206,7 +210,7 @@ merge(rr, 8, 9, f"=(D{rr}-F{rr})*100"); merge(rr, 10, 19, "訪問1件あたり�
 style(rr, 1, 19); style(rr, 10, 19, h="left")
 for c in (4, 6):
     ws.cell(rr, c).number_format = '0.00%'
-ws.cell(rr, 8).number_format = '+0.00"pt";-0.00"pt";"±0pt"'
+ws.cell(rr, 8).number_format = '[Blue]+0.00"pt";[Red]-0.00"pt";"±0pt"'
 ws.cell(11, 5).number_format = PCT
 
 # ---- 個人データ
@@ -222,11 +226,17 @@ def person_block(top, title, use_prev, with_diff):
     if with_diff:
         merge(top + 1, 14, 19, "先月比（増減）")
     style(top + 1, 1, 19 if with_diff else 13, hdr_fill, True)
+    if with_diff:
+        style(top + 1, 14, 19, teal_fill, True)
+        for c in range(14, 20):
+            ws.cell(top + 1, c).font = Font(bold=True, color="FFFFFF")
     for c, h in enumerate(cols, start=1):
         if not with_diff and c > 13:
             break
         ws.cell(top + 2, c, h)
     style(top + 2, 1, 19 if with_diff else 13, sub_fill, True)
+    for c in range(1, (19 if with_diff else 13) + 1):
+        ws.cell(top + 2, c).font = Font(bold=True, color="1F3864")
     C = PRV if use_prev else CUR
     for n, idx in enumerate(active):
         rr = top + 3 + n
@@ -259,8 +269,21 @@ def person_block(top, title, use_prev, with_diff):
             ws.cell(rr, 14).number_format = DCNT; ws.cell(rr, 15).number_format = DCNT
             for c in (16, 17, 18, 19):
                 ws.cell(rr, c).number_format = DPT
-        style(rr, 1, 19 if with_diff else 13)
+        style(rr, 1, 19 if with_diff else 13, fill=band_fill if n % 2 else None)
         ws.cell(rr, 1).alignment = Alignment(horizontal="left")
+        ws.cell(rr, 1).font = Font(bold=True)
+    if not use_prev:
+        from openpyxl.formatting.rule import FormulaRule
+        first, last = top + 3, top + 2 + len(active)
+        for col, ref in (("H", "$E$11"), ("I", "$E$12"), ("J", "$E$13"), ("K", "$E$14"), ("L", "$D$25")):
+            ws.conditional_formatting.add(f"{col}{first}:{col}{last}",
+                FormulaRule(formula=[f"{col}{first}<{ref}"], fill=pink_fill))
+    else:
+        from openpyxl.formatting.rule import FormulaRule
+        first, last = top + 3, top + 2 + len(active)
+        for col, ref in (("H", "$O$11"), ("I", "$O$12"), ("J", "$O$13"), ("K", "$O$14")):
+            ws.conditional_formatting.add(f"{col}{first}:{col}{last}",
+                FormulaRule(formula=[f"{col}{first}<{ref}"], fill=pink_fill))
     return top + 3 + len(active)
 
 end = person_block(27, "  ■ 今月の個人データ", False, True)
